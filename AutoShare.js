@@ -1,7 +1,7 @@
 import xapi from 'xapi';
 
 
-// Specify the URI you wish to have to button dial
+// Specify the URI you wish to have the button dial
 const URI = '##############';
 
 // Specify the video input source you would like to auto share
