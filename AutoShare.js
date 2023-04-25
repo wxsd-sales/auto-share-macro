@@ -1,110 +1,89 @@
+/*********************************************************
+ * 
+ * Author:           William Mills
+ *                   Technical Solutions Specialist 
+ *                   wimills@cisco.com
+ *                   Cisco Systems
+ * 
+ * Version: 1-0-0
+ * Released: 09/20/21
+ * 
+ * This Cisco Webex Device Macro will create a single button on your
+ * Webex Devices touch interface will when tapped will dial a specified 
+ * SIP URI and once the call has been connected, it will automatically 
+ * start sending a remote presentation from a specified source input
+ * video source.
+ * 
+ * Full Readme and source code available on Github:
+ * https://github.com/wxsd-sales/auto-share-macro
+ * 
+ ********************************************************/
+
 import xapi from 'xapi';
 
+/*********************************************************
+ * Configure the settings below
+**********************************************************/
 
-// Specify the URI you wish to have the button dial
-const URI = 'myURI@example.com';
+const config = {
+  target: 'user@example.com', // The target SIP address to dial
+  source: 3,  // The Input Video Source which is auto shared
+  button: {   // Button Configuration
+    name: 'Auto Share',
+    icon: 'Handset',
+    color: '#CF7900',
+    panelId: 'auto-share'
+  }
+}
 
-// Specify the video input source you would like to auto share
-// This will be different depending on the model of video endpoint
-const SOURCE = 3;
+/*********************************************************
+ * Below are the functions of this macro which process
+ * call and user interface events.
+**********************************************************/
 
-// Specify the name of the button you would like to appear on the touch interface
-const BUTTON_NAME = 'Auto Share'
+// Create our button based off config
+createPanel(config.button)
 
-const BUTTON_ICON = 'Handset'
-
-
-///////////////////////////////////
-// Do not change anything below
-///////////////////////////////////
-
+// Subscribe to call status, panel clicks and presentation events
+xapi.Status.Call.on(monitorCall);
+xapi.Event.UserInterface.Extensions.Panel.Clicked.on(processClicks)
 
 // State handling varibles
-let currentMacro = false;
-let sharing = false;
+let callId;
 
-// Add the Button to the touch panel
-xapi.command('UserInterface Extensions Panel Save', {
-    PanelId: 'auto_present'
-    }, `<Extensions>
-      <Version>1.8</Version>
+function processClicks(event) {
+  if (event.PanelId != config.button.panelId) return;
+  console.log(`Button [${config.button.panelId}] clicked, dialling [${config.target}]`)
+  xapi.Command.Dial({ Number: config.target })
+  .then(result => {callId = result.CallId})
+}
+
+// This function will start and stop presentations for calls which 
+// this macro has started
+function monitorCall(event) {
+  if(event.id != callId) return;
+  if( event.hasOwnProperty('Status') && event.Status == 'Connected'){
+    console.log(`Starting presentation from source [${config.source}]`)
+    xapi.Command.Presentation.Start({PresentationSource: config.source});
+  } else if( event.hasOwnProperty('ghost') ){
+    console.log('Call ended, stopping presentation')
+    xapi.Command.Presentation.Stop();
+  }
+}
+
+function createPanel(button) {
+  const panel = 
+  `<Extensions>
       <Panel>
-        <Order>1</Order>
         <Type>Statusbar</Type>
-        <Icon>`+BUTTON_ICON+`</Icon>
+        <Location>HomeScreen</Location>
+        <Icon>${button.icon}</Icon>
         <Color>#CF7900</Color>
-        <Name>`+BUTTON_NAME+`</Name>
+        <Name>${button.name}</Name>
         <ActivityType>Custom</ActivityType>
       </Panel>
-    </Extensions>`);
+    </Extensions>`;
 
-// Listen for the auto_present panel press
-xapi.event.on('UserInterface Extensions Panel Clicked', (event) => {
-    if(event.PanelId == 'auto_present'){
-      console.log('Auto Present Pressed')
-
-      // Initallise the macro
-      currentMacro = true;
-
-      xapi.Command.Dial(
-        { 
-          Number: URI
-        });
-
-    }
-});
-
-// This function will check we are in a call and it was established by this macro
-// before starting the presentation share automatically
-function detectCallAnswered(event){
-
-  // Log all Call Answerstate events
-  console.log(event);
-  
-  // Check that it is Answered and that currentMarco is true
-  if(event == 'Answered' && currentMacro){
-    
-    console.log('Sharing');
-
-    xapi.Command.Presentation.Start(
-      { Instance: 1,
-        PresentationSource: SOURCE});
-
-    // Reset the macro state
-    currentMacro = false;
-
-    // Sharing is now true
-    sharing = true;
-  }
-  else{
-    
-    console.log('Not sharing');
-  }
-
+  xapi.Command.UserInterface.Extensions.Panel.Save(
+    { PanelId: button.panelId }, panel )
 }
-
-// This fuction ensures the Presentation Preview is ended quickly after
-// this macro based call has ended. It should not affect other calls
-function ensurePresentationEnds(event){
-
-  console.log(event);
-
-  if(event.Cause == 'restartPreviewAfterCallEnded' && sharing){
-    
-    console.log('Preview has started, lets end it quickly');
-
-    xapi.Command.Presentation.Stop(
-      { Instance: 1,
-        PresentationSource: SOURCE});
-
-    // Reset the macro state
-    sharing = false;
-  }
-
-}
-
-// Subscribe to the Call AnswerState Status and send it to our custom function
-xapi.Status.Call.AnswerState.on(detectCallAnswered);
-
-// Subscribe to the Presentation Preview Start event and send it to our custom function
-xapi.Event.PresentationPreviewStarted.on(ensurePresentationEnds);
