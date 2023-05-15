@@ -15,16 +15,20 @@ Screenshot of macro auto created button on a Webex Devices Touch Interface:
 - Auto Share: Once the target SIP destination has answered the call. The macro will auto share a presentation using a local video input source.
 
 
-## Requirements
-
-1. Webex Device running RoomOS 9.15.x or above.
-2. Device Web Admin or Control Hub access to enable and upload the Macro.
-
 ## Setup
+
+### Prerequisites & Dependencies: 
+
+- Webex Device running RoomOS 9.15.x or above.
+- Device Web Admin or Control Hub access to enable and upload the Macro.
+
+
+### Installation Steps:
 
 1. Download the ``auto-share.js`` file and upload it to your Webex Room device.
 2. Configure the Macro by changing the initial values, there are comments explaining each one.
 3. Enable the Macro.
+
 
 ## Validation
 
