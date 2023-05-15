@@ -4,14 +4,16 @@ This Cisco Webex Device Macro is simple. It will create a single button on your 
 
 Once the call has ended, the presentation share preview will also automatically be closed.
 
-Setup Instructions:
-
-1. Customise the initial values at the beginning of the macro. Specify your devices presentation input number, SIP URI and UI icon needs.
-2. Load the Macro on your Cisco Webex device running RoomOS or CE
-3. The Macro will automatically add the icon on your devices touch device once it runs.
-
-Screenshot of macro icon on a Webex Touch Interface:
+Screenshot of macro auto created button on a Webex Devices Touch Interface:
 ![AutoShare](https://user-images.githubusercontent.com/21026209/136816656-96957943-e0a2-488d-8537-600e36550778.png)
+
+
+## Overview 
+
+- Auto Dial: You can configure the macro to auto dial a specific SIP destination
+- Automatic UI Extension: The macro will automatically create the UI Extension button for you based of the configuration in the macro. Saving you from having to add the button separately.
+- Auto Share: Once the target SIP destination has answered the call. The macro will auto share a presentation using a local video input source.
+
 
 ## Requirements
 
